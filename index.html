@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prioritas utang teknis</title>
+<style>
+:root{--bg:#eef1f4;--panel:#fff;--ink:#1b2430;--mute:#5d6b7a;--line:#d3dae1;--teal:#0f6b6b;--amber:#b86e00;--red:#b3362b;--blue:#34568b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a21;--panel:#1c242d;--ink:#e6ebf0;--mute:#98a6b4;--line:#33404d;--teal:#4fc1bd;--amber:#e4a043;--red:#ee7b6f;--blue:#8fb0e6}}
+:root[data-theme="dark"]{--bg:#141a21;--panel:#1c242d;--ink:#e6ebf0;--mute:#98a6b4;--line:#33404d;--teal:#4fc1bd;--amber:#e4a043;--red:#ee7b6f;--blue:#8fb0e6}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1180px;margin:0 auto;padding:28px 18px 60px}
+h1{font:600 28px/1.2 "IBM Plex Serif",Georgia,serif;margin:0 0 6px}
+.sub{color:var(--mute);max-width:660px;margin:0 0 22px}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px}
+h2{font:600 16px/1.3 "IBM Plex Serif",Georgia,serif;margin:0 0 12px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.stat{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:4px;padding:8px 14px;min-width:120px}
+.stat b{display:block;font-size:22px}
+.stat span{color:var(--mute);font-size:13px}
+.item{border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px;background:var(--bg)}
+.item.sel{outline:2px solid var(--blue)}
+.top{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.rank{font-weight:600;width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-size:13px;flex:none}
+input[type=text],select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:5px 8px;min-width:0}
+input[type=text]{flex:1}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.scores{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+label{font-size:12px;color:var(--mute);display:block}
+.scores select{width:100%}
+.meta{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:13px;gap:8px;flex-wrap:wrap}
+.tier{font-weight:600;padding:2px 9px;border-radius:99px;border:1px solid currentColor}
+.t-now{color:var(--red)}.t-plan{color:var(--amber)}.t-win{color:var(--teal)}.t-watch{color:var(--mute)}
+button{font:inherit;cursor:pointer;border-radius:4px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px}
+button.primary{background:var(--teal);border-color:var(--teal);color:var(--bg);font-weight:600}
+button.x{border:none;background:none;color:var(--mute);padding:2px 6px}
+.help{color:var(--mute);font-size:13px;margin:12px 0 0}
+svg{width:100%;height:auto;display:block}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:13px;margin-top:12px;color:var(--mute)}
+.scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<main>
+<h1>Prioritas utang teknis</h1>
+<p class="sub">Beri skor pada setiap item berdasarkan empat faktor. Alat ini akan mengurutkannya dan menempatkannya pada peta dampak terhadap usaha. Item contoh hanyalah pengisi: ganti dengan utang teknis sistem Anda yang sebenarnya.</p>
+
+<div class="stats" id="stats"></div>
+
+<div class="grid">
+  <section class="panel">
+    <h2>Daftar utang teknis</h2>
+    <div id="list"></div>
+    <div class="top" style="margin-top:6px"><input type="text" id="newName" placeholder="Tulis item utang, mis. Database bersama antar layanan"><button class="primary" id="add">Tambah item</button></div>
+    <p class="help">Skala tiap faktor 1 (rendah) sampai 5 (tinggi). Usaha: 1 = hitungan hari, 3 = beberapa minggu, 5 = beberapa kuartal.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Peta nilai terhadap usaha</h2>
+    <div class="scroll"><svg id="map" viewBox="0 0 440 400" role="img" aria-label="Peta sebar item utang berdasarkan usaha dan nilai"></svg></div>
+    <div class="legend">
+      <span><b class="t-now">Perbaiki sekarang</b>: nilai tinggi, usaha kecil</span>
+      <span><b class="t-plan">Rencanakan</b>: nilai tinggi, usaha besar</span>
+      <span><b class="t-win">Kemenangan cepat</b>: nilai sedang, usaha kecil</span>
+      <span><b class="t-watch">Pantau</b>: nilai sedang, usaha besar</span>
+    </div>
+    <p class="help"><b>Nilai</b> = 40% dampak bisnis + 30% risiko + 30% bunga (seberapa cepat biaya membengkak jika dibiarkan). <b>Skor prioritas</b> = nilai &divide; usaha, diskalakan ke 10. Klik sebuah titik untuk menuju barisnya.</p>
+  </section>
+</div>
+</main>
+
+<script>
+var items=[
+ {n:"Database bersama yang mengikat antar layanan",c:"Arsitektur",i:5,r:4,t:5,e:5},
+ {n:"Framework dan dependensi belum diperbarui",c:"Keamanan",i:4,r:5,t:4,e:3},
+ {n:"Proses deploy manual dengan banyak langkah",c:"Infrastruktur",i:4,r:3,t:3,e:2},
+ {n:"Cakupan tes rendah pada alur pembayaran inti",c:"Pengujian",i:5,r:4,t:3,e:3},
+ {n:"Integrasi dengan sistem lama tanpa dokumentasi",c:"Dokumentasi",i:3,r:3,t:2,e:1},
+ {n:"Logika bisnis terduplikasi di banyak modul",c:"Kualitas kode",i:3,r:2,t:3,e:4}
+];
+var sel=-1;
+function val(x){return x.i*.4+x.r*.3+x.t*.3}
+function score(x){return Math.min(10,val(x)/x.e*5)}
+function tier(x){var h=val(x)>=3.5,l=x.e<=3;
+ if(h&&l)return["now","Perbaiki sekarang","t-now"];if(h)return["plan","Rencanakan","t-plan"];
+ if(x.e<=2)return["win","Kemenangan cepat","t-win"];return["watch","Pantau","t-watch"]}
+function sorted(){return items.map(function(x,k){return{x:x,k:k}}).sort(function(a,b){return score(b.x)-score(a.x)})}
+function opts(v){var s="";for(var k=1;k<=5;k++)s+='<option'+(k==v?' selected':'')+'>'+k+'</option>';return s}
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;")}
+function render(){
+ var s=sorted(),h="";
+ s.forEach(function(o,p){var x=o.x,k=o.k,t=tier(x);
+  h+='<div class="item'+(sel===k?' sel':'')+'" id="row'+k+'"><div class="top"><span class="rank">'+(p+1)+'</span>'+
+  '<input type="text" value="'+esc(x.n)+'" data-k="'+k+'" data-f="n" aria-label="Nama item">'+
+  '<button class="x" data-del="'+k+'" aria-label="Hapus item">Hapus</button></div>'+
+  '<div class="scores">'+
+  '<div><label>Dampak</label><select data-k="'+k+'" data-f="i">'+opts(x.i)+'</select></div>'+
+  '<div><label>Risiko</label><select data-k="'+k+'" data-f="r">'+opts(x.r)+'</select></div>'+
+  '<div><label>Bunga</label><select data-k="'+k+'" data-f="t">'+opts(x.t)+'</select></div>'+
+  '<div><label>Usaha</label><select data-k="'+k+'" data-f="e">'+opts(x.e)+'</select></div></div>'+
+  '<div class="meta"><span class="tier '+t[2]+'">'+t[1]+'</span><span>'+x.c+' &middot; skor <b>'+score(x).toFixed(1)+'</b></span></div></div>'});
+ if(!items.length)h='<p class="help">Belum ada item. Tambahkan item utang pertama Anda di bawah.</p>';
+ document.getElementById("list").innerHTML=h;
+ stats();map();
+}
+function stats(){
+ var n=items.length,now=items.filter(function(x){return tier(x)[0]=="now"}).length;
+ var avg=n?(items.reduce(function(a,x){return a+val(x)},0)/n):0;
+ var eff=items.reduce(function(a,x){return a+x.e},0);
+ document.getElementById("stats").innerHTML=
+ '<div class="stat"><b>'+n+'</b><span>item dilacak</span></div>'+
+ '<div class="stat" style="border-left-color:var(--red)"><b>'+now+'</b><span>perlu diperbaiki sekarang</span></div>'+
+ '<div class="stat" style="border-left-color:var(--amber)"><b>'+avg.toFixed(1)+'</b><span>rata-rata nilai (dari 5)</span></div>'+
+ '<div class="stat" style="border-left-color:var(--blue)"><b>'+eff+'</b><span>total poin usaha</span></div>';
+}
+function map(){
+ var L=44,T=14,W=380,H=330,svg=document.getElementById("map"),h="";
+ function px(e){return L+(e-.5)/5*W} function py(v){return T+H-(v-1)/4*H}
+ var mx=L+W*(3.5-.5)/5,my=py(3.5);
+ h+='<rect x="'+L+'" y="'+T+'" width="'+W+'" height="'+H+'" fill="none" stroke="var(--line)"/>';
+ h+='<rect x="'+L+'" y="'+T+'" width="'+(mx-L)+'" height="'+(my-T)+'" fill="var(--red)" opacity=".08"/>';
+ h+='<rect x="'+mx+'" y="'+T+'" width="'+(L+W-mx)+'" height="'+(my-T)+'" fill="var(--amber)" opacity=".08"/>';
+ h+='<rect x="'+L+'" y="'+my+'" width="'+(mx-L)+'" height="'+(T+H-my)+'" fill="var(--teal)" opacity=".08"/>';
+ h+='<line x1="'+mx+'" x2="'+mx+'" y1="'+T+'" y2="'+(T+H)+'" stroke="var(--line)" stroke-dasharray="4 4"/>';
+ h+='<line x1="'+L+'" x2="'+(L+W)+'" y1="'+my+'" y2="'+my+'" stroke="var(--line)" stroke-dasharray="4 4"/>';
+ for(var k=1;k<=5;k++){h+='<text x="'+px(k)+'" y="'+(T+H+16)+'" text-anchor="middle" font-size="11" fill="var(--mute)">'+k+'</text>';
+  h+='<text x="'+(L-8)+'" y="'+(py(k)+4)+'" text-anchor="end" font-size="11" fill="var(--mute)">'+k+'</text>'}
+ h+='<text x="'+(L+W/2)+'" y="'+(T+H+34)+'" text-anchor="middle" font-size="12" fill="var(--ink)">Usaha (rendah ke tinggi)</text>';
+ h+='<text transform="translate(12 '+(T+H/2)+') rotate(-90)" text-anchor="middle" font-size="12" fill="var(--ink)">Nilai (rendah ke tinggi)</text>';
+ var cols={now:"var(--red)",plan:"var(--amber)",win:"var(--teal)",watch:"var(--mute)"},seen={};
+ sorted().forEach(function(o,p){var x=o.x,v=val(x),key=x.e+"_"+v.toFixed(1),off=seen[key]||0;seen[key]=off+1;
+  var cx=px(x.e)+off*14,cy=py(v);
+  h+='<g class="dot" data-k="'+o.k+'" style="cursor:pointer"><circle cx="'+cx+'" cy="'+cy+'" r="11" fill="'+cols[tier(x)[0]]+'" stroke="var(--panel)" stroke-width="2"/>'+
+  '<text x="'+cx+'" y="'+(cy+4)+'" text-anchor="middle" font-size="11" font-weight="600" fill="var(--panel)">'+(p+1)+'</text><title>'+esc(x.n)+'</title></g>'});
+ svg.innerHTML=h;
+}
+document.addEventListener("change",function(e){var d=e.target.dataset;if(d.f&&d.f!="n"){items[d.k][d.f]=+e.target.value;render()}});
+document.addEventListener("input",function(e){var d=e.target.dataset;if(d.f=="n")items[d.k].n=e.target.value});
+document.addEventListener("click",function(e){
+ var del=e.target.getAttribute("data-del");if(del!==null){items.splice(+del,1);sel=-1;render();return}
+ var g=e.target.closest(".dot");if(g){sel=+g.dataset.k;render();var r=document.getElementById("row"+sel);if(r)r.scrollIntoView({behavior:"smooth",block:"center"})}
+});
+function add(){var f=document.getElementById("newName"),v=f.value.trim();if(!v)return;
+ items.push({n:v,c:"Arsitektur",i:3,r:3,t:3,e:3});f.value="";sel=items.length-1;render()}
+document.getElementById("add").onclick=add;
+document.getElementById("newName").addEventListener("keydown",function(e){if(e.key=="Enter")add()});
+render();
+</script>
+</body>
+</html>
