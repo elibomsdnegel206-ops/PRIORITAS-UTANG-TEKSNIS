@@ -1,1 +1,1 @@
-# PRIORITAS-UTANG-TEKSNIS
+# Tech debt prioritizer
